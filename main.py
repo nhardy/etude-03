@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 
+"""
+Author(s): Nathan Hardy
+"""
+
 import re
 import sys
 
 _SUITES = {
     'Clubs': {
-        'repr': 'C',
+        'string': 'C',
         'weight': 1,
     },
     'Diamonds': {
-        'repr': 'D',
+        'string': 'D',
         'weight': 2,
     },
     'Hearts': {
-        'repr': 'H',
+        'string': 'H',
         'weight': 3,
     },
     'Spades': {
-        'repr': 'S',
+        'string': 'S',
         'weight': 4,
     },
 }
@@ -30,15 +34,22 @@ _SUITE_MAP = {
 }
 
 class Suite:
+    """
+    Suite class used for abstraction
+    """
     def __init__(self, raw: str):
         self.name = _SUITE_MAP[raw]
 
     @property
     def weight(self) -> int:
+        """
+        Relative integer weight for current suite
+        """
+
         return _SUITES[self.name]['weight']
 
     def __str__(self) -> str:
-        return _SUITES[self.name]['repr']
+        return _SUITES[self.name]['string']
 
     def __eq__(self, other) -> bool:
         return self.weight == other.weight
@@ -72,15 +83,24 @@ _CARD_NAME_MAP = {
     ]
 }
 
-_CARD_REGEX = re.compile(r'^([1-9]|1[0-3]|t|j|q|k|a)(c|d|h|s)$', re.I)
+_CARD_REGEX = re.compile(r'^([1-9]|1[0-3]|[tjqka])([cdhs])$', re.I)
 
 class Card:
+    """
+    Card class used for abstraction
+    """
+
     def __init__(self, value: int, suite: str):
         self._value = value
         self.suite = Suite(suite)
 
     @classmethod
     def from_raw(cls, raw: str):
+        """
+        Will attempt to create an instance of a Card from a given input.
+        Returns None if input is invalid
+        """
+
         match = _CARD_REGEX.match(raw)
 
         if not match:
@@ -98,6 +118,10 @@ class Card:
 
     @property
     def weight(self) -> int:
+        """
+        Relative integer weight for card number
+        """
+
         return 14 if self._value == 1 else self._value
 
     def __str__(self) -> str:
@@ -107,36 +131,67 @@ class Card:
         return self.weight == other.weight and self.suite == other.suite
 
     def __lt__(self, other) -> bool:
-        return self.weight < other.weight or (self.weight == other.weight and self.suite < other.suite)
+        return self.weight < other.weight or (
+            self.weight == other.weight and self.suite < other.suite
+        )
 
     def __le__(self, other) -> bool:
         return self.weight <= other.weight
 
     def __gt__(self, other) -> bool:
-        return self.weight > other.weight or (self.weight == other.weight and self.suite > other.suite)
+        return self.weight > other.weight or (
+            self.weight == other.weight and self.suite > other.suite
+        )
 
     def __ge__(self, other) -> bool:
         return self.weight >= other.weight
 
 _DELIMITER = re.compile(r'[ /-]')
 
+def contains_duplicates(collection: list):
+    """
+    Returns whether or not the collection contains duplicates
+    """
+
+    current = collection[:]
+    while len(current) > 1:
+        item, current = current[0], current[1:]
+        if any(map(lambda i: i == item, current)):
+            return True
+    return False
+
 def is_valid_hand(hand: list) -> bool:
+    """
+    Returns whether or not hand is a valid poker hand
+    """
+
+    # If we don't have 5 cards, the hand is invalid
     if len(hand) != 5:
         return False
 
+    # If any of the tokens did not map to a valid card, the hand is invalid
     if any(map(lambda c: c is None, hand)):
         return False
 
-    # TODO: More Validation checks?
+    # If there are duplicate cards, the hand is invalid
+    if contains_duplicates(hand):
+        return False
 
+    # Otherwise, the hand is valid
     return True
 
 def main():
+    """
+    Main program method
+    """
+
     for unstripped_line in sys.stdin.readlines():
         line = unstripped_line.strip()
+        unique_delimiters = set(_DELIMITER.findall(line))
         raw_cards = _DELIMITER.split(line)
         cards = list(map(Card.from_raw, raw_cards))
-        if is_valid_hand(cards):
+
+        if is_valid_hand(cards) and len(unique_delimiters) == 1:
             print(' '.join(map(str, sorted(cards))))
         else:
             print('Invalid:', line)

@@ -1,2 +1,4 @@
 6s/3d/KC/13S/Ad
+Th/10H/KC/13S/Ad
+6s/3d-KC 13S/Ad
 hello
